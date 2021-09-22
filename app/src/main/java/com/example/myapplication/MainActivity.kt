@@ -175,6 +175,9 @@ fun secondChildComponent(deps: SecondChildDependencies): SecondChildComponent {
     }
 }
 
+
+// ========== Example Screens ============
+
 class MainActivity : AppCompatActivity(), ComponentContainer {
 
     override val componentClass get() = RootComponent::class.java
