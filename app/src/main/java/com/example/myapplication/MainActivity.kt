@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.example.myapplication.di.ComponentContainer
+import com.example.myapplication.di.DiComponent
 import com.example.myapplication.di.Injector.getComponent
 import com.example.myapplication.di.lazyUnsafe
 
@@ -52,7 +53,8 @@ fun appModule(app: Application): AppModule {
     }
 }
 
-abstract class RootComponent : AppModule,
+abstract class RootComponent : DiComponent,
+    AppModule,
     FragmentContainerDependencies,
     MainFragmentDependencies {
 
@@ -80,7 +82,7 @@ interface MainFragmentDependencies {
     val activityPresenter: ActivityPresenter
 }
 
-interface MainFragmentComponent : MainFragmentDependencies {
+interface MainFragmentComponent : DiComponent, MainFragmentDependencies {
 
     val mainFragmentPresenter: MainFragmentPresenter
 }
@@ -114,6 +116,7 @@ fun fragmentContainerModule(): FragmentContainerModule {
 }
 
 interface FragmentContainerComponent :
+    DiComponent,
     FragmentContainerModule,
     ChildDependencies,
     SecondChildDependencies {
@@ -144,7 +147,7 @@ interface ChildDependencies {
     val activityPresenter: ActivityPresenter
 }
 
-interface ChildComponent : ChildDependencies {
+interface ChildComponent : DiComponent, ChildDependencies {
 
     val childPresenter: ChildPresenter
 }
@@ -161,7 +164,7 @@ interface SecondChildDependencies {
     val fragmentContainerPresenter: FragmentContainerPresenter
 }
 
-interface SecondChildComponent : SecondChildDependencies {
+interface SecondChildComponent : DiComponent, SecondChildDependencies {
 
     val secondChildPresenter: SecondChildPresenter
 }
@@ -178,7 +181,7 @@ fun secondChildComponent(deps: SecondChildDependencies): SecondChildComponent {
 
 // ========== Example Screens ============
 
-class MainActivity : AppCompatActivity(), ComponentContainer {
+class MainActivity : AppCompatActivity(), ComponentContainer<RootComponent> {
 
     override val componentClass get() = RootComponent::class.java
 
@@ -200,7 +203,7 @@ class MainActivity : AppCompatActivity(), ComponentContainer {
     }
 }
 
-class MainFragment : Fragment(R.layout.main_fragment), ComponentContainer {
+class MainFragment : Fragment(R.layout.main_fragment), ComponentContainer<MainFragmentComponent> {
 
     override val componentClass get() = MainFragmentComponent::class.java
 
@@ -225,7 +228,7 @@ class MainFragment : Fragment(R.layout.main_fragment), ComponentContainer {
     }
 }
 
-class ContainerFragment : Fragment(R.layout.container_fragment), ComponentContainer {
+class ContainerFragment : Fragment(R.layout.container_fragment), ComponentContainer<FragmentContainerComponent> {
 
     override val componentClass get() = FragmentContainerComponent::class.java
 
@@ -259,7 +262,7 @@ class ContainerFragment : Fragment(R.layout.container_fragment), ComponentContai
     }
 }
 
-class ChildFragment : Fragment(R.layout.child_fragment), ComponentContainer {
+class ChildFragment : Fragment(R.layout.child_fragment), ComponentContainer<ChildComponent> {
 
     override val componentClass get() = ChildComponent::class.java
 
@@ -285,7 +288,7 @@ class ChildFragment : Fragment(R.layout.child_fragment), ComponentContainer {
     }
 }
 
-class SecondChildFragment : Fragment(R.layout.second_child_fragment), ComponentContainer {
+class SecondChildFragment : Fragment(R.layout.second_child_fragment), ComponentContainer<SecondChildComponent> {
 
     override val componentClass get() = SecondChildComponent::class.java
 

@@ -2,7 +2,6 @@ package com.example.myapplication
 
 import android.app.Application
 import android.util.Log
-import com.example.myapplication.di.InjectorInitializer
 
 class App : Application() {
 
