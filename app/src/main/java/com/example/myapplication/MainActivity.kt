@@ -25,15 +25,19 @@ class FragmentContainerPresenter
 class ChildPresenter
 class SecondChildPresenter
 
+// region App scope
 interface AppComponent : AppModule {
 
     override val appPresenter: AppPresenter
-}
 
-fun appComponent(app: Application): AppComponent {
-    val appModule = appModule(app)
-    return object : AppComponent,
-        AppModule by appModule {
+    companion object {
+
+        fun create(app: Application): AppComponent {
+            val appModule = AppModule.create(app)
+            return object : AppComponent,
+                AppModule by appModule {
+            }
+        }
     }
 }
 
@@ -42,41 +46,51 @@ interface AppModule {
     val appPresenter: AppPresenter
     val appContext: Context
     val application: Application
-}
 
-fun appModule(app: Application): AppModule {
-    return object : AppModule {
+    companion object {
 
-        override val appPresenter: AppPresenter by lazyUnsafe { AppPresenter() }
-        override val appContext: Context = app
-        override val application: Application = app
+        fun create(app: Application): AppModule {
+            return object : AppModule {
+
+                override val appPresenter: AppPresenter by lazyUnsafe { AppPresenter() }
+                override val appContext: Context = app
+                override val application: Application = app
+            }
+        }
     }
 }
+// endregion
 
+// region Root (Activity) scope
 abstract class RootComponent : DiComponent,
     AppModule,
     FragmentContainerDependencies,
     MainFragmentDependencies {
 
+    companion object {
+
+        fun create(): RootComponent {
+            return object : RootComponent(),
+                AppModule by getAppComponent() {
+
+                override val activityPresenter: ActivityPresenter by lazyUnsafe { ActivityPresenter() }
+            }
+        }
+    }
+
     abstract override val activityPresenter: ActivityPresenter
 
     fun createMainFragmentComponent(): MainFragmentComponent {
-        return mainFragmentComponent(this)
+        return MainFragmentComponent.create(this)
     }
 
     fun createFragmentContainerComponent(): FragmentContainerComponent {
-        return fragmentContainerComponent(this)
+        return FragmentContainerComponent.create(this)
     }
 }
+// endregion
 
-fun rootComponent(): RootComponent {
-    return object : RootComponent(),
-        AppModule by getAppComponent() {
-
-        override val activityPresenter: ActivityPresenter by lazyUnsafe { ActivityPresenter() }
-    }
-}
-
+// region MainFragment scope
 interface MainFragmentDependencies {
 
     val activityPresenter: ActivityPresenter
@@ -85,18 +99,23 @@ interface MainFragmentDependencies {
 interface MainFragmentComponent : DiComponent, MainFragmentDependencies {
 
     val mainFragmentPresenter: MainFragmentPresenter
-}
 
-fun mainFragmentComponent(dependencies: MainFragmentDependencies): MainFragmentComponent {
-    return object : MainFragmentComponent,
-        MainFragmentDependencies by dependencies {
+    companion object {
 
-        override val mainFragmentPresenter: MainFragmentPresenter by lazyUnsafe {
-            MainFragmentPresenter()
+        fun create(dependencies: MainFragmentDependencies): MainFragmentComponent {
+            return object : MainFragmentComponent,
+                MainFragmentDependencies by dependencies {
+
+                override val mainFragmentPresenter: MainFragmentPresenter by lazyUnsafe {
+                    MainFragmentPresenter()
+                }
+            }
         }
     }
 }
+// endregion
 
+// region FragmentContainer scope
 interface FragmentContainerDependencies {
 
     val activityPresenter: ActivityPresenter
@@ -105,12 +124,15 @@ interface FragmentContainerDependencies {
 interface FragmentContainerModule {
 
     val fragmentContainerPresenter: FragmentContainerPresenter
-}
 
-fun fragmentContainerModule(): FragmentContainerModule {
-    return object : FragmentContainerModule {
-        override val fragmentContainerPresenter: FragmentContainerPresenter by lazyUnsafe {
-            FragmentContainerPresenter()
+    companion object {
+
+        fun create(): FragmentContainerModule {
+            return object : FragmentContainerModule {
+                override val fragmentContainerPresenter: FragmentContainerPresenter by lazyUnsafe {
+                    FragmentContainerPresenter()
+                }
+            }
         }
     }
 }
@@ -121,25 +143,30 @@ interface FragmentContainerComponent :
     ChildDependencies,
     SecondChildDependencies {
 
+    companion object {
+
+        fun create(deps: FragmentContainerDependencies): FragmentContainerComponent {
+            val module = FragmentContainerModule.create()
+            return object : FragmentContainerComponent,
+                FragmentContainerModule by module,
+                FragmentContainerDependencies by deps {
+            }
+        }
+    }
+
     override val fragmentContainerPresenter: FragmentContainerPresenter
 
     fun createChildComponent(): ChildComponent {
-        return childComponent(this)
+        return ChildComponent.create(this)
     }
 
     fun createSecondChildComponent(): SecondChildComponent {
-        return secondChildComponent(this)
+        return SecondChildComponent.create(this)
     }
 }
+// endregion
 
-fun fragmentContainerComponent(deps: FragmentContainerDependencies): FragmentContainerComponent {
-    val module = fragmentContainerModule()
-    return object : FragmentContainerComponent,
-        FragmentContainerModule by module,
-        FragmentContainerDependencies by deps {
-    }
-}
-
+// region ChildFragment scope
 interface ChildDependencies {
 
     val fragmentContainerPresenter: FragmentContainerPresenter
@@ -149,16 +176,21 @@ interface ChildDependencies {
 
 interface ChildComponent : DiComponent, ChildDependencies {
 
+    companion object {
+
+        fun create(deps: ChildDependencies): ChildComponent {
+            return object : ChildComponent, ChildDependencies by deps {
+
+                override val childPresenter: ChildPresenter by lazyUnsafe { ChildPresenter() }
+            }
+        }
+    }
+
     val childPresenter: ChildPresenter
 }
+// endregion
 
-fun childComponent(deps: ChildDependencies): ChildComponent {
-    return object : ChildComponent, ChildDependencies by deps {
-
-        override val childPresenter: ChildPresenter by lazyUnsafe { ChildPresenter() }
-    }
-}
-
+// region SecondChildFragment scope
 interface SecondChildDependencies {
 
     val fragmentContainerPresenter: FragmentContainerPresenter
@@ -166,17 +198,21 @@ interface SecondChildDependencies {
 
 interface SecondChildComponent : DiComponent, SecondChildDependencies {
 
-    val secondChildPresenter: SecondChildPresenter
-}
+    companion object {
 
-fun secondChildComponent(deps: SecondChildDependencies): SecondChildComponent {
-    return object : SecondChildComponent, SecondChildDependencies by deps {
+        fun create(deps: SecondChildDependencies): SecondChildComponent {
+            return object : SecondChildComponent, SecondChildDependencies by deps {
 
-        override val secondChildPresenter: SecondChildPresenter by lazyUnsafe {
-            SecondChildPresenter()
+                override val secondChildPresenter: SecondChildPresenter by lazyUnsafe {
+                    SecondChildPresenter()
+                }
+            }
         }
     }
+
+    val secondChildPresenter: SecondChildPresenter
 }
+// endregion
 
 
 // ========== Example Screens ============
@@ -273,7 +309,7 @@ class ChildFragment : Fragment(R.layout.child_fragment), ComponentContainer<Chil
         tvChild.text = "ChildFragment@${this.hashCode()}"
         btnToSecondChild.setOnClickListener {
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container_id, SecondChildFragment::class.java, null, "C2")
+                .replace(R.id.fragment_container_id, ChildFragment::class.java, null, "C2")
                 .addToBackStack("C2")
                 .commit()
         }

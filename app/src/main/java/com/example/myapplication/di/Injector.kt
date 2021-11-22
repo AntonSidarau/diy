@@ -1,12 +1,13 @@
 package com.example.myapplication.di
 
 import android.app.Application
-import com.example.myapplication.InjectorInitializer
 import com.example.myapplication.lifecycle.ActivityComponentContainerHelper
+import java.util.*
 
 object Injector {
 
     private val lazyReferenceStore: MutableMap<Class<*>, ComponentWrapper<*>> = linkedMapOf()
+    private val relationStore: MutableMap<Class<*>, MutableSet<Any>> = WeakHashMap()
 
     fun init(
         application: Application,
@@ -19,19 +20,41 @@ object Injector {
     }
 
     fun remove(container: ComponentContainer<*>) {
-        lazyReferenceStore[container.componentClass]?.onRemove()
-    }
+        unregisterContainer(container)
 
-    fun <T : DiComponent> getComponent(componentClass: Class<T>): T {
-        return this[componentClass]
+        val componentClass = container.componentClass
+        val relatedContainers = relationStore[componentClass]
+        if (relatedContainers == null || relatedContainers.isEmpty()) {
+            lazyReferenceStore[componentClass]?.onRemove()
+        }
     }
 
     fun <T : DiComponent> ComponentContainer<T>.getComponent(): T {
-        return getComponent(this.componentClass)
+        registerContainer(this)
+
+        return Injector[componentClass]
     }
 
-    inline fun <reified T : DiComponent> InjectorInitializer.getComponent(): T {
-        return getComponent(T::class.java)
+    /**
+     * Use only in InjectionInitializer like classes
+     */
+    fun <T : DiComponent> getComponentForCreation(componentClass: Class<T>): T {
+        return this[componentClass]
+    }
+
+    private fun <T : DiComponent> unregisterContainer(componentContainer: ComponentContainer<T>) {
+        val relatedContainers = relationStore[componentContainer.componentClass]
+        relatedContainers?.remove(componentContainer)
+    }
+
+    private fun <T : DiComponent> registerContainer(componentContainer: ComponentContainer<T>) {
+        val componentClass = componentContainer.componentClass
+        val relatedContainers = relationStore[componentClass]
+        if (relatedContainers == null) {
+            relationStore[componentClass] = mutableSetOf(componentContainer)
+        } else {
+            relatedContainers.add(componentContainer)
+        }
     }
 
     private operator fun <T : DiComponent> get(componentClass: Class<T>): T {

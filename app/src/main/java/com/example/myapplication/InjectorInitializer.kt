@@ -2,19 +2,19 @@ package com.example.myapplication
 
 import android.app.Application
 import com.example.myapplication.di.ComponentWrapper
+import com.example.myapplication.di.DiComponent
 import com.example.myapplication.di.Injector
-import com.example.myapplication.di.Injector.getComponent
 
 object InjectorInitializer {
 
     fun init(application: Application) {
-        AppInjector.newInstance(appComponent(application))
+        AppInjector.newInstance(AppComponent.create(application))
 
         Injector.init(
             application,
             listOf(
                 ComponentWrapper(RootComponent::class.java) {
-                    rootComponent()
+                    RootComponent.create()
                 },
                 ComponentWrapper(MainFragmentComponent::class.java) {
                     getComponent<RootComponent>()
@@ -34,5 +34,9 @@ object InjectorInitializer {
                 }
             )
         )
+    }
+
+    private inline fun <reified T : DiComponent> InjectorInitializer.getComponent(): T {
+        return Injector.getComponentForCreation(T::class.java)
     }
 }
