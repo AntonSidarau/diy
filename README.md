@@ -1,51 +1,68 @@
-# DIY (Do it yourself) - DI (service locator) здорового человека.
+# DIY (Do it yourself) - DI (service locator) of healthy person.
 
-## Потому что только очень здоровый человек сможет писать столько же бойлерплейта как и для даггера
+## Because only healthy person will be able to write the same amount of boilerplate as dagger does.
 
-### Плюсы:
+### Some notes:
 
-1. Compile-time safety и более. IDE сразу подчеркивает красным, если не хвтатает зависимости
-2. Нет kapt = быстрая скорость сборки
-3. Легко переходить с даггера
-4. Можно использовать с kotlin multiplatorm
-5. Гибкость
+1. This is variant when you can open same multiple `ComponentContainer`'s one after another.
+2. It's more like proof of concept rather than another inversion of control implementation
+3. KMP version TBD
 
-### Минусы:
+### Pros:
 
-1. Не отлавливает циклические зависимости при компиляции
-2. Нужно писать столько же кода, как и при даггере
-3. Приходится держать многое в голове (если хочешь правильно использовать)
-4. Еще один di(service locator)
+1. Compile-time safety and even more. IDE will show red underline if there is no dependency in component.
+2. No use of kapt = fast build.
+3. Really easy to migrate from dagger.
+4. It can be used in kotlin multiplatform projects (theoretically). TBD.
+5. Flexibility, because it's just a bunch of interfaces.
 
-### В чем идея:
+### Cons:
 
-Если хочется на даггере ускорить сборку, то приходишь к решению, что у тебя в Мodule только Provides методы. A Component
-выглядит вот так:
+1. Cyclic dependencies will not be detected.
+2. You have to write code as much as with dagger (maybe a little bit less).
+3. You have keep in mind a lot of stuff (if you want to use it properly. I guess it fits dagger, too).
+4. Another di (service locator).
+
+### What's the idea
+
+Long story short, if you want to speed up project build, you will eventually come to solutions like:
+
+1. Absence of `@Subcomponent` annotation.
+2. Only methods with `@Provide` annotation in dagger modules.
+3. Remove all `@Inject` annotations with field in your injection targets, such as Activity, Fragment, etc.
+4. Provide dependencies as less as possible. It means if only one class requires some dependency - it is better to call
+   constructor of this dependency manually. Smth like `return MyClass(DependencyImplementation())`
+5. Do not use `@Inject` annotation in constructor. Or limit this usage.
+6. Remove Hilt (Or do not come up to idea to even use it, psycho)
+
+Eventually, your Component will be like this:
 
 ```
 interface Component {
     val presenter: Presenter
     
-    val analyst: IAnalyst 
+    val analytics: Analytics
 }
 ```
 
-И в каком-нибудь Fragment'е зависимости вместо @Inject получаюся через `component.presenter`.
+And somewhere in your Fragment dependencies will be provided through `getComponent().presenter`. Seems like service
+locator, huh?
 
-Тогда почему бы не убрать аннотации и писать все самим. Нам потребуются интерфейсы `Component`, `Dependencies`, `Module`
-и провайдить зависимости в модуле мы будем через:
+So why not to remove this annotations, kapt and do it yourself? We will need interfaces `Component`, `Dependencies`
+, `Module`. Logic of Component and Module will be the same as in dagger, but as for dependencies:
 
-1. scoped завимость просто val dep: Dep = Dep() - будет создаваться сразу при создании компонента
-2. scoped зависимость через by lazy - будет создаваться только при получении
-3. unscoped зависимость через val dep: Dep get() = Dep()
+1. scoped dependency will be just `val dep: Dep = Dep()` - Will be created together with it's component
+2. scoped dependency via `by lazy` - Will be created once when retrieved only
+3. unscoped dependency `via val dep: Dep get() = Dep()`
 
-А вместо Qualifier у нас будет просто название зависимости.
+Instead of `@Qualifier` annotation - just name of your dependency. `val fooPresenter: Presenter`
+and `val barPresenter: Presenter`. Creation of modules' implementation can be whatever you like. I've chosen variant
+via `create()` method in class companion.
 
-Создавать реализации интерфейсом модулей можно как угодо. Я выбрал подход через метод create в классе-компаньоне
+### Sample app
 
-### Семпл приложения
+In general I don't insist in specific way to store and manage your components, so you can use what you've used before.
+My implementation is in `com.example.myapplication.di` and `com.example.myapplication.lifecycle` packages. Solution
+isn't perfect and originally was intended to use in kmp projects, but for not it isn't :)
 
-В целом мой подход не настаивает на конкретном варианте хранения и менеджмента компонентов, так что можете выбрать свой
-сами. Моя реализация находится в пекедже `com.example.myapplication.di`. Решение не конечное и первоначально
-задумывалось под mpp, но в нем необходимость временно отпала, да и в целом нужно некоторые моменты подправить. Но в
-целом все работает. Я исходил из принципа, что ComponentContainer может быть владелцем только 1 компонента
+Important: I'm using `ComponentContainer` in a way, that this container can have only one component.
