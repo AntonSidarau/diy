@@ -62,7 +62,7 @@ via `create()` method in class companion.
 ### Sample app
 
 In general I don't insist in specific way to store and manage your components, so you can use what you've used before.
-My implementation is in `com.example.myapplication.di` and `com.example.myapplication.lifecycle` packages. Solution
-isn't perfect and originally was intended to use in kmp projects, but for not it isn't :)
+Af for my implementation - you can found it in `com.example.myapplication.di` and `com.example.myapplication.lifecycle` packages. 
+Solution isn't perfect and originally was intended to use in kmp projects, but for now it isn't :)
 
 Important: I'm using `ComponentContainer` in a way, that this container can have only one component.
