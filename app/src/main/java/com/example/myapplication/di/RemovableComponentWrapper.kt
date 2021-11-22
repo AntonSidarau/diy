@@ -1,6 +1,6 @@
 package com.example.myapplication.di
 
-interface RemovableComponent<T> {
+interface RemovableComponentWrapper<T> {
 
     fun get(): T
 

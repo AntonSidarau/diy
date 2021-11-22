@@ -1,31 +1,34 @@
-package com.example.myapplication.di
+package com.example.myapplication
 
 import android.app.Application
-import com.example.myapplication.*
+import com.example.myapplication.di.ComponentWrapper
+import com.example.myapplication.di.Injector
 import com.example.myapplication.di.Injector.getComponent
 
 object InjectorInitializer {
 
     fun init(application: Application) {
-        AppInjector.newInstance(appComponent(application))
+        AppInjector.newInstance(AppComponent.create(application))
+
         Injector.init(
-            application, listOf(
-                ComponentLazyReference(RootComponent::class.java) {
-                    rootComponent()
+            application,
+            listOf(
+                ComponentWrapper(RootComponent::class.java) {
+                    RootComponent.create()
                 },
-                ComponentLazyReference(MainFragmentComponent::class.java) {
+                ComponentWrapper(MainFragmentComponent::class.java) {
                     getComponent<RootComponent>()
                         .createMainFragmentComponent()
                 },
-                ComponentLazyReference(FragmentContainerComponent::class.java) {
+                ComponentWrapper(FragmentContainerComponent::class.java) {
                     getComponent<RootComponent>()
                         .createFragmentContainerComponent()
                 },
-                ComponentLazyReference(ChildComponent::class.java) {
+                ComponentWrapper(ChildComponent::class.java) {
                     getComponent<FragmentContainerComponent>()
                         .createChildComponent()
                 },
-                ComponentLazyReference(SecondChildComponent::class.java) {
+                ComponentWrapper(SecondChildComponent::class.java) {
                     getComponent<FragmentContainerComponent>()
                         .createSecondChildComponent()
                 }

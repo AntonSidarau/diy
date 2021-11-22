@@ -1,7 +1,7 @@
 package com.example.myapplication.di
 
-interface ComponentContainer {
+interface ComponentContainer<T : DiComponent> {
 
-    val componentClass: Class<*>
+    val componentClass: Class<T>
 }
 

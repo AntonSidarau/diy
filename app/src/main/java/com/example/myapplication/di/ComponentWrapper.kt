@@ -1,9 +1,9 @@
 package com.example.myapplication.di
 
-class ComponentLazyReference<T : Any>(
+class ComponentWrapper<T : DiComponent>(
     internal val componentClass: Class<T>,
     private val provideComponent: () -> T
-) : RemovableComponent<T> {
+) : RemovableComponentWrapper<T> {
 
     private var storedComponent: T? = null
 
@@ -17,6 +17,7 @@ class ComponentLazyReference<T : Any>(
     }
 
     override fun onRemove() {
+        storedComponent?.onCleared()
         storedComponent = null
     }
 }
